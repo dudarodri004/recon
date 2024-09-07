@@ -37,14 +37,10 @@ def main(domain):
     # Step 2: Subdomain Enumeration with subfinder
     subfinder_output = f"{domain}/subfinder.txt"
     run_command(f"subfinder -d {domain} -o {subfinder_output}", "Running subfinder for subdomain enumeration")
-
-    # Step 3: Subdomain Enumeration with SecurityTrails API
-    securitytrails_output = f"{domain}/securitytrails.txt"
-    run_command(f"curl --request GET 'https://api.securitytrails.com/v1/domain/{domain}/subdomains' --header 'apikey: {SECURITY_TRAILS_API_KEY}' | jq -r '.subdomains[]' > {securitytrails_output}", "Fetching subdomains from SecurityTrails")
     
     # Combine results from assetfinder, subfinder, and SecurityTrails using anew
     combined_subdomains = f"{domain}/combined_subdomains.txt"
-    run_command(f"cat {assetfinder_output} {subfinder_output} {securitytrails_output} | anew {combined_subdomains}", "Combining subdomains from assetfinder, subfinder, and SecurityTrails using anew")
+    run_command(f"cat {assetfinder_output} {subfinder_output} | anew {combined_subdomains}", "Combining subdomains from assetfinder and subfinder using anew")
 
     # Step 4: Subdomain Permutations with ripgen
     ripgen_output = f"{domain}/ripgen.txt"
