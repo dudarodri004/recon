@@ -67,11 +67,11 @@ def recon(domain):
     
     # Step 7: Scan non-CDN IPs with Nmap
     nmap_output = f"{directory}/nmap_scan_{domain}.txt"
-    run_command(f"nmap -iL {non_cdn_ips} -oN {nmap_output}", "Running Nmap scan on non-CDN IPs")
+    run_command(f"nmap -iL {non_cdn_ips} --min-rate 5000 --max-retries 1 --max-scan-delay 20ms -T4 -p- --exclude-ports 22,80,443,53,5060,8080 --open -oN {nmap_output}", "Running Nmap scan on non-CDN IPs")
 
     # Step 8: Probe live subdomains with httpx
     live_subdomains = f"{directory}/live_subdomains_{domain}.txt"
-    run_command(f"cat {all_subdomains} | httpx -o {live_subdomains}", "Probing live subdomains with httpx")
+    run_command(f"cat {all_subdomains} | httprobe -c 50 --prefer-https | anew {live_subdomains}", "Probing live subdomains with httprobe")
     
     # Step 9: Use httpx to grab HTTP metadata and location data
     httpx_output = f"{directory}/httpx_output_{domain}.txt"
