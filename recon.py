@@ -54,10 +54,14 @@ def main(domain):
     dnsx_output = f"{domain}/dnsx_output.txt"
     run_command(f"cat {all_subdomains} | dnsx -a -resp-only -o {dnsx_output}", "Running dnsx to grab A records")
     
+    # Remove duplicate IPs
+    unique_ips = f"{domain}/unique_ips.txt"
+    run_command(f"sort -u {dnsx_output} > {unique_ips}", "Removing duplicate IPs")
+
     # Step 6: Remove IPs pointing to CDNs
     non_cdn_ips = f"{domain}/non_cdn_ips.txt"
     cdn_ips = ["104.16.", "104.17.", "151.101."]  # Extend this list with more CDN ranges
-    with open(dnsx_output, 'r') as f:
+    with open(unique_ips, 'r') as f:
         with open(non_cdn_ips, 'w') as nf:
             for line in f:
                 if not any(cdn_ip in line for cdn_ip in cdn_ips):
@@ -67,13 +71,17 @@ def main(domain):
     nmap_output = f"{domain}/nmap_scan.txt"
     run_command(f"nmap -iL {non_cdn_ips} -oN {nmap_output}", "Running Nmap scan on non-CDN IPs")
 
-    # Step 8: Use httpx to grab HTTP metadata and location data
-    httpx_output = f"{domain}/httpx_output.txt"
-    run_command(f"cat {all_subdomains} | httpx -title -tech-detect -status-code -location -o {httpx_output}", "Running httpx to grab HTTP metadata and location data")
+    # Step 8: Probe live subdomains with httpx
+    live_subdomains = f"{domain}/live_subdomains.txt"
+    run_command(f"cat {all_subdomains} | httpx -o {live_subdomains}", "Probing live subdomains with httpx")
     
-    # Step 9: Run nuclei on all gathered data
+    # Step 9: Use httpx to grab HTTP metadata and location data
+    httpx_output = f"{domain}/httpx_output.txt"
+    run_command(f"cat {live_subdomains} | httpx -title -tech-detect -status-code -location -o {httpx_output}", "Running httpx to grab HTTP metadata and location data")
+    
+    # Step 10: Run nuclei on all gathered data
     nuclei_output = f"{domain}/nuclei_output.txt"
-    run_command(f"nuclei -l {all_subdomains} -o {nuclei_output}", "Running nuclei on all gathered data")
+    run_command(f"nuclei -l {live_subdomains} -o {nuclei_output}", "Running nuclei on all gathered data")
 
 if __name__ == "__main__":
     target_domain = input("Enter the target domain: ")
